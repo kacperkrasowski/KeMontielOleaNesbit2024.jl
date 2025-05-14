@@ -1,0 +1,13 @@
+name = "KeMontielOleaNesbit2024"
+uuid = "7910306a-e9c1-4799-8892-8a3b0c1683a8"
+authors = ["Kacper Krasowski, Stefano Fusinato"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1.11.3"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
