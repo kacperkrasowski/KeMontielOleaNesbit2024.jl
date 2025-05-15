@@ -103,3 +103,14 @@ function separation(raw_text)
     return FOMC_separation
 end
 
+function tokenize(content)
+    FOMC_token = []
+    for (i, statement) in enumerate(content)
+        #TBD
+
+
+    end
+
+
+
+end
