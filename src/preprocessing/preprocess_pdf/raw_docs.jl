@@ -1,6 +1,8 @@
 include("preprocess_data.jl")
-using SnowballStemmer 
-
+using TextAnalysis 
+using DataStructures
+using DataFrames
+using CSV
 function my_tokenize(text::String)
     return split(text, r"\W"; keepempty=false)
 end
@@ -13,6 +15,7 @@ mutable struct RawDocs
     N::Int
     df_ranking::Vector{Tuple{String,Int}}
     tfidf_ranking::Vector{Tuple{String,Float64}}
+    bigrams::Vector{Vector{String}}
 
 
     function RawDocs(doc_data; sw = "none", contraction_split = true)
@@ -53,7 +56,7 @@ mutable struct RawDocs
         N = length(docs)
         tokens = [split(doc, r"\W+"; keepempty=false) for doc in docs]
 
-        new(docs, tokens , [], stopwords, N, [], []) 
+        new(docs, tokens , [], stopwords, N, [], [], []) 
     end
 end
         function phrase_replace!(self::RawDocs, replace_dict::Dict{String, String})
@@ -78,7 +81,7 @@ end
         function clean1(tokens, len) 
             return [t for t in tokens if all(isletter, t) && length(t) > len]
         end
-        function clean2(tokens, length) 
+        function clean2(tokens, len) 
             return [t for t in tokens if (all(isletter, t) || all(isnumeric, t)) && length(t) > len]
         end
         function stem2!(self::RawDocs)
@@ -97,5 +100,100 @@ end
             end
             return stemmed
         end
+        function bigram!(self::RawDocs, items::String)
+            function bigram_join(tok_list::Vector{String})
+                text = []
+                for i in 1:length(tok_list)-1
+                    push!(text, tok_list[i]*"."*tok_list[i+1])
+                end
+                text
+            end
+            if items == "tokens"
+                self.bigrams = map(x -> bigram_join(x), self.tokens)
+            elseif items == "stems"
+                self.bigrams = map(x -> bigram_join(x), self.stems)
+            else 
+                error("Must be token or stem")
+            end
 
+        end
+
+        function stopword_remove!(self::RawDocs, items::String, threshold::Bool = false)
+            function remove(tokens)
+                return [t for t in tokens if t ∉ self.stopwords]
+            end
+            if items == "tokens"
+                self.tokens = map(x -> remove(x), self.tokens)
+            elseif items == "stems"
+                self.stems = map(x -> remove(x), self.stems)
+            else 
+                error("Must be token or stem")
+            end
+        end
+
+        function term_rank!(self::RawDocs, items::String, print_output::Bool=true)
+            if items == "stems"
+                v = self.stems
+            elseif items == "tokens"
+                v = self.tokens
+            elseif items == "bigrams"
+                v = self.bigrams
+            else
+                error("Items must be either \'tokens\' , \'bigrams\' or \'stems\'.")
+            end
+            agg = []
+            for el in v
+                for l in el
+                    push!(agg, l)
+                end
+            end
+            counts = counter(agg)
+
+            v_unique = [unique(doc) for doc in v]
+            agg_d = []
+            for el in v_unique
+                for l in el
+                    push!(agg_d, l)
+                end
+            end
+            counts_d = counter(agg_d)
+
+            unique_tokens = keys(counts)
+
+            tfidf(t) = (1 + log(counts[t])) * log(self.N / counts_d[t])
+            unsorted_df = [(t, counts[t]) for t in unique_tokens]
+            unsorted_tf_idf = [(t, tfidf(t)) for t in unique_tokens]
+            println(unsorted_df)
+            self.df_ranking = sort(unsorted_df, by = x -> x[2], rev = true)
+            self.tfidf_ranking = sort(unsorted_tf_idf, by = x -> x[2], rev = true)
+            if print_output
+                df_df = DataFrame(term = first.(self.df_ranking), df = last.(self.df_ranking))
+                tfidf_df = DataFrame(term = first.(self.tfidf_ranking), tfidf = last.(self.tfidf_ranking))
+                CSV.write("df_ranking.csv", df_df)
+                CSV.write("tfidf_ranking.csv", tfidf_df)
+            end
+        end
     
+        function rank_remove!(self::RawDocs, rank::String, items::String, cutoff::Int)
+            function remove(tokens)
+                return [t for t in tokens if t ∉ to_remove]
+            end
+            if rank == "df"
+                to_remove = [t[1] for t in self.df_ranking if t[2] <= cutoff]
+            elseif rank == "tfidf"
+                to_remove = [t[1] for t in self.tfidf_ranking if t[2] <= cutoff]
+            else
+                error("Wrong rank specified")
+            end
+
+            if items == "tokens"
+                self.tokens = map(x -> remove(x), self.tokens)
+            elseif items == "bigrams"
+                self.bigrams = map(x -> remove(x), self.bigrams)
+            elseif items == "stems"
+                self.stems = map(x -> remove(x), self.stems)
+            else
+                error("Items must be either \'tokens\', \'bigrams\' or \'stems\'.")
+            end
+
+        end
