@@ -104,10 +104,11 @@ end
 function tokenize(content)
     FOMC_token = []
     for (i, statement) in enumerate(content)
-        try
+        println("Running content $i out of $(length(content))")
+        if typeof(statement) == String
             statement = lowercase(statement)
-        catch e
-            error("Not lowercaseable")
+        else
+            println("Not lowercaseable")
         end
         docsobj = RawDocs([statement]; sw = "long")
         token_clean!(docsobj,1)
@@ -126,7 +127,11 @@ function tokenize(content)
         stopword_remove!(docsobj,"tokens")
         stem2!(docsobj)
         stopword_remove!(docsobj,"stems")
-        push!(FOMC_token, join(docsobj.stems[1], " ")) # Here there might be a mistake
+        if length(docsobj.stems)>0
+            push!(FOMC_token, join(docsobj.stems[1], " ")) # Here there might be a mistake
+        else
+            push!(FOMC_token, " ")
+        end
     end
 
     return FOMC_token
@@ -139,9 +144,10 @@ function find_collocation(raw_text_separated::DataFrame)
     
     bigram_list = bigrams(big_document)
     trigram_list = trigrams(big_document)
-
+    
     replace_word = [join(split(x, " "), "_") for x in bigram_list] 
     replace_word = vcat(replace_word, [join(split(x, " "), "_") for x in trigram_list])
+   
 
     dict_collocation = Dict(zip(vcat(bigram_list, trigram_list), replace_word))
 
@@ -160,7 +166,6 @@ function preprocess()
 
     println("Separating FOMC1 and FOMC2...")
     start1 = time()
-    println(text)
     text_separated = separation(text)
     println("Finished. Time: $(time() - start1) seconds")
     println("******************************************************************************")

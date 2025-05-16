@@ -12,15 +12,19 @@ function bigrams(big_document; freq::Int = 150) # for the whole document
     for doc in big_document
         filtered = [w for w in doc if length(w) ≥ 3 && lowercase(w) ∉ ignored_words]
         doc_bigrams = ngram(filtered,2)
+        
         append!(all_bigrams, [join(b, " ") for b in doc_bigrams])
     end
+    
     freq_map = counter(all_bigrams)
     
     frequent_bigrams = [bigram for (bigram, count) in freq_map if count ≥ freq]
-
+    
     return frequent_bigrams
 
 end
+
+
 
 function trigrams(big_document; freq::Int = 100) # for the whole document
     ignored_words = stopwords["eng"]
@@ -31,6 +35,7 @@ function trigrams(big_document; freq::Int = 100) # for the whole document
     for doc in big_document
         filtered = [w for w in doc if length(w) ≥ 3 && lowercase(w) ∉ ignored_words]
         doc_bigrams = ngram(filtered,3)
+
         append!(all_bigrams, [join(b, " ") for b in doc_bigrams])
     end
     freq_map = counter(all_bigrams)
@@ -48,4 +53,5 @@ function replace_collocation(s::String, dict_collocation::Dict{String, String})
     return s
 end
 
+df_l = [["The", "Federal", "Reserve", "made", "a", "policy", "decision"], ["Reserve", "Bank", "governor", "speaks", "about", "inflation"], ["Unintelligible", "remarks", "from", "January", "meeting"]]
 #### ADD THE PLOT_WORD_CLOUD AT SOME POINT ###
