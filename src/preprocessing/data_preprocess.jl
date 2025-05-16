@@ -1,6 +1,6 @@
 config_path = abspath(joinpath(@__DIR__, "..", "CONSTANT.jl"))
 include(config_path)
-
+include( joinpath(@__DIR__,"preprocess_pdf","raw_docs.jl")) 
 using DataFrames
 using PDFIO
 using XLSX
@@ -60,7 +60,6 @@ function generate_raw_data()
     println("error count = ",error_count)
 end
 
-generate_raw_data()
 function separation(raw_text)
     separation_rule = DataFrame(XLSX.readtable(joinpath(UTILFILE_PATH, "separation_rules.xlsx"),"Sheet1"))
     FOMC_separation = DataFrame(Date = Int[], Speaker = String[], content = String[], Section = String[])
@@ -106,11 +105,33 @@ end
 function tokenize(content)
     FOMC_token = []
     for (i, statement) in enumerate(content)
-        #TBD
-
-
+        statement = lowercase(statement)
+        docsobj = RawDocs([statement]; sw = "long")
+        token_clean!(docsobj,1)
+        additional_stopword = ["january", "february", "march", "april", "may", "june", "july", "august", "september","october", "november", "december", "unintelligible"]
+        for word in additional_stopword
+            push!(docsobj.stopwords, word)
+        end
+        firstname = DataFrame(XLSX.readtable(joinpath(UTILFILE_PATH, "firstnames.xlsx"),"Sheet1"))
+        for name in eachrow(firstname)
+            
+            if typeof(name["First name"]) == "missing"
+                println(typeof(name["First name"]))
+                push!(docsobj.stopwords, name["First name"])
+            end
+        end
+        stopword_remove!(docsobj,"tokens")
+        stem2!(docsobj)
+        stopword_remove!(docsobj,"stems")
+        push!(FOMC_token, join(docsobj.stems[1], " ")) # Here there might be a mistake
     end
 
-
+    return FOMC_token
 
 end
+sample_texts = [
+    "January is great!",        # has a month + short word
+    "They are running quickly", # should stem + remove stopwords
+    "Unintelligible data"       # has a custom stopword
+]
+tokenize(sample_texts)

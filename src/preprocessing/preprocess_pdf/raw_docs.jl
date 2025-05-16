@@ -18,7 +18,7 @@ mutable struct RawDocs
     bigrams::Vector{Vector{String}}
 
 
-    function RawDocs(doc_data; sw = "none", contraction_split = true)
+    function RawDocs(doc_data; sw::String = "none", contraction_split = true)
         docs = String[]
 
         if isa(doc_data, String) && isfile(doc_data) # Checks if doc_data is a String path to a file
