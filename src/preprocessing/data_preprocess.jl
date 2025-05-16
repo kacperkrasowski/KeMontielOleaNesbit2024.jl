@@ -1,6 +1,7 @@
 config_path = abspath(joinpath(@__DIR__, "..", "CONSTANT.jl"))
 include(config_path)
 include( joinpath(@__DIR__,"preprocess_pdf","raw_docs.jl")) 
+include("utils.jl")
 using DataFrames
 using PDFIO
 using XLSX
@@ -54,7 +55,6 @@ function generate_raw_data()
     xlsx_path = joinpath(CACHE_PATH, "raw_text.xlsx")
     XLSX.writetable(xlsx_path, raw_text, overwrite=true)
     elapsed = time() - start  # Assuming you used `start_time = time()` earlier
-    println(nrow(raw_text))
     println("Documents processed. Time: $elapsed seconds")
     println("Cache Location: $xlsx_path")
     println("error count = ",error_count)
@@ -70,7 +70,6 @@ function separation(raw_text)
     for i in 1:nrow(separation_rule)
         println("Running document $i out of 148")
         temp = filter(row -> row.Date == separation_rule[i,:Date], raw_text)
-        println(temp)
         try
             temp1 = temp[separation_rule[i,"FOMC1_start"]+1:separation_rule[i,"FOMC1_end"]+1,:]
             temp1.Section .= 1 
@@ -105,7 +104,11 @@ end
 function tokenize(content)
     FOMC_token = []
     for (i, statement) in enumerate(content)
-        statement = lowercase(statement)
+        try
+            statement = lowercase(statement)
+        catch e
+            error("Not lowercaseable")
+        end
         docsobj = RawDocs([statement]; sw = "long")
         token_clean!(docsobj,1)
         additional_stopword = ["january", "february", "march", "april", "may", "june", "july", "august", "september","october", "november", "december", "unintelligible"]
@@ -130,9 +133,67 @@ function tokenize(content)
 
 end
 
-function find_collocation(raw_text_separated)
-    #TBD
+function find_collocation(raw_text_separated::DataFrame)
+    content = [replace(x, r"[^\w\s]" => "") for x in raw_text_separated.content]
+    big_document = [split(x, ' ') for x in content]
+    
+    bigram_list = bigrams(big_document)
+    trigram_list = trigrams(big_document)
 
+    replace_word = [join(split(x, " "), "_") for x in bigram_list] 
+    replace_word = vcat(replace_word, [join(split(x, " "), "_") for x in trigram_list])
 
+    dict_collocation = Dict(zip(vcat(bigram_list, trigram_list), replace_word))
+
+    raw_text_separated.content = [replace_collocation(x, dict_collocation) for x in raw_text_separated.content]
+
+    #xlsx_path = joinpath(CACHE_PATH, "FOMC_separated_collocation.xlsx")
+    #XLSX.writetable(xlsx_path, raw_text_separated; overwrite=true)
+
+    return raw_text_separated
 
 end
+
+function preprocess()
+    println("Loading raw_text.xlsx...")
+    text = DataFrame(XLSX.readtable(joinpath(CACHE_PATH, "raw_text.xlsx"), "Sheet1"))
+
+    println("Separating FOMC1 and FOMC2...")
+    start1 = time()
+    println(text)
+    text_separated = separation(text)
+    println("Finished. Time: $(time() - start1) seconds")
+    println("******************************************************************************")
+
+    println("Tokenizing content...")
+    start = time()
+
+    # Drop rows where content is missing
+    text_separated = filter(row -> !ismissing(row.content), text_separated)
+
+    # Ensure content is string before passing to tokenize
+    #content_vec = parse.(String, text_separated.content)
+
+    # Apply tokenize function (should return a Vector{Vector{String}})
+
+    text_separated.content = tokenize(text_separated.content)
+
+    println("Finished. Time: $(time() - start) seconds")
+    println("******************************************************************************")
+
+    println("Finding collocations...")
+    start = time()
+    text_separated_col = find_collocation(text_separated)
+    println("Finished. Time: $(time() - start) seconds")
+    println("******************************************************************************")
+
+    # Save the final result
+    println("Total time: $(time() - start1)")
+    xlsx_path = joinpath(CACHE_PATH, "FOMC_token_separated_col.xlsx")
+    XLSX.writetable(xlsx_path, text_separated_col; overwrite=true)
+
+    
+end
+
+generate_raw_data()
+preprocess() #CONCATENATE THE BI/TRIGRAMS WITH "_" APRT FROM THAT IT WORKS WELL
