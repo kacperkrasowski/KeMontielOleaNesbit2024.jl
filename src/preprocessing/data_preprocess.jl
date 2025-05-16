@@ -129,9 +129,10 @@ function tokenize(content)
     return FOMC_token
 
 end
-sample_texts = [
-    "January is great!",        # has a month + short word
-    "They are running quickly", # should stem + remove stopwords
-    "Unintelligible data"       # has a custom stopword
-]
-tokenize(sample_texts)
+
+function find_collocation(raw_text_separated)
+    #TBD
+
+
+
+end
