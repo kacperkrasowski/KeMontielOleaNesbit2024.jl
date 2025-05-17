@@ -8,7 +8,7 @@ using XLSX
 
 function generate_raw_data()
     error_count = 0
-    raw_doc = readdir(PDF_PATH_TEST)
+    raw_doc = readdir(PDF_PATH)
     filelist = sort(raw_doc)
 
     raw_text = DataFrame(Date = Int[], Speaker = String[], content = String[])
@@ -17,7 +17,7 @@ function generate_raw_data()
         date = parse(Int, file[5:10])
         n = length(filelist)
         println("Document $i of $n: $file")
-        doc = pdDocOpen(joinpath(cwd,"src", "FOMC_pdf_test", file))
+        doc = pdDocOpen(joinpath(cwd,"src", "FOMC_pdf", file))
         npage = pdDocGetPageCount(doc)
         parsed = ""
 
