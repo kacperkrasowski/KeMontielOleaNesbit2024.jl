@@ -8,7 +8,7 @@ using XLSX
 
 function generate_raw_data()
     error_count = 0
-    raw_doc = readdir(PDF_PATH)
+    raw_doc = readdir(PDF_PATH_TEST)
     filelist = sort(raw_doc)
 
     raw_text = DataFrame(Date = Int[], Speaker = String[], content = String[])
@@ -17,7 +17,7 @@ function generate_raw_data()
         date = parse(Int, file[5:10])
         n = length(filelist)
         println("Document $i of $n: $file")
-        doc = pdDocOpen(joinpath(cwd,"src", "FOMC_pdf", file))
+        doc = pdDocOpen(joinpath(cwd,"src", "FOMC_pdf_test", file))
         npage = pdDocGetPageCount(doc)
         parsed = ""
 
@@ -180,7 +180,6 @@ function preprocess()
     #content_vec = parse.(String, text_separated.content)
 
     # Apply tokenize function (should return a Vector{Vector{String}})
-
     text_separated.content = tokenize(text_separated.content)
 
     println("Finished. Time: $(time() - start) seconds")

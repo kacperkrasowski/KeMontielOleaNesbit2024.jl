@@ -33,6 +33,7 @@ mutable struct RawDocs
                 docs = String.(doc_data)
             catch e
                 println("Can not be converted to a String")
+                docs = [" "]
             end
         else
             error("doc_data must be a valid path or vector of strings")
