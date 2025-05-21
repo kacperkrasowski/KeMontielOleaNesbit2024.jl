@@ -4,6 +4,7 @@ using DataFrames
 using XLSX
 using Plots
 using JSON
+
 function corpus2dense(corpus::Vector{Vector{Pair{Int64, Int64}}}, num_terms::Int)
     num_docs = length(corpus)
     mat = zeros(Float64, num_terms, num_docs)

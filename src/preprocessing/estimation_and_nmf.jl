@@ -1,7 +1,7 @@
 using Random
 using Distributions
 using XLSX
-using Pickle
+using JSON
 using LinearAlgebra
 using MAT
 
@@ -9,6 +9,11 @@ config_path = abspath(joinpath(@__DIR__, "..", "CONSTANT.jl"))
 config_path2 = abspath(joinpath(@__DIR__, "..", "onlineldavb.jl"))
 include(config_path)
 include(config_path2)
+function read_json(file)
+    open(file,"r") do f
+        return JSON.parse(f)
+    end
+end
 function  sample_dirichlet(alpha::Matrix{Float64})
     n,k = size(alpha)
     res = Matrix{Float64}(undef,n,k)
@@ -25,11 +30,14 @@ function vb_estimate(section::String; onlyTF::Bool=true, K::Int=40, alpha::Float
     println("VB Estimation for $section")
     suffix = onlyTF ? "_onlyTF" : ""
     dict_path = joinpath(MATRIX_PATH, section * "_dictionary_meeting$(suffix).xlsx")
-    vocab_1 = XLSX.readtable(dict_path, "Sheet1") #[:,1] might be necessery
-    vocab_1 = collect(String.(vocab1)) # might be a problem with the Int motherfucker
+    vocab_11 = XLSX.readxlsx(dict_path) #[:,1] might be necessery
+    words = vocab_11["Sheet1"][2:end,1]
+    vocab_1 = collect(String.(words)) # might be a problem with the Int motherfucker
+    println(vocab_1)
 
     text_path = joinpath(MATRIX_PATH, section * "_text$(suffix).json")
-    text = Pickle.load(open(text_path))
+    text = read_json(text_path)
+
 
     text1 = [join(doc, " ") for doc in text] 
     
@@ -38,7 +46,7 @@ function vb_estimate(section::String; onlyTF::Bool=true, K::Int=40, alpha::Float
     end
     
     D = length(text1)
-    olda = OnlineLDA(vocab_1, K, D, alpha, eta, tau, kappa, seed=random_seed)
+    olda = OnlineLDA(vocab_1, K, D, alpha, eta, tau, kappa,1)
     gamma, bound = update_lambda(olda, text1)
 
     posterior_mean = gamma ./ sum(gamma, dims=1)
@@ -46,6 +54,7 @@ function vb_estimate(section::String; onlyTF::Bool=true, K::Int=40, alpha::Float
     return herfindahl, posterior_mean, gamma, olda.lambda, olda, text1
 
 end
+vb_estimate("FOMC1")
 
 function find_NMF_given_solution(B_init::Matrix{Float64}, Theta_init::Matrix{Float64}, 
     beta::Float64, T::Int, eps::Float64; 
@@ -185,4 +194,3 @@ function store_posterior_draws(gamma::Matrix{Float64}, lam::Matrix{Float64},
     matwrite(joinpath(save_folder, "$cache_name.mat"),
              Dict("post_draws_B_Theta" => post_draw_array))
 end
-
