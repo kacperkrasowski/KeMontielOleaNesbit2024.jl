@@ -28,7 +28,7 @@ function vb_estimate(section::String; onlyTF::Bool=true, K::Int=40, alpha::Float
     vocab_1 = XLSX.readtable(dict_path, "Sheet1") #[:,1] might be necessery
     vocab_1 = collect(String.(vocab1)) # might be a problem with the Int motherfucker
 
-    text_path = joinpath(MATRIX_PATH, section * "_text$(suffix).pkl")
+    text_path = joinpath(MATRIX_PATH, section * "_text$(suffix).json")
     text = Pickle.load(open(text_path))
 
     text1 = [join(doc, " ") for doc in text] 
