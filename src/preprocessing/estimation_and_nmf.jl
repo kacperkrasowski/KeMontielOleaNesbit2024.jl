@@ -33,7 +33,6 @@ function vb_estimate(section::String; onlyTF::Bool=true, K::Int=40, alpha::Float
     vocab_11 = XLSX.readxlsx(dict_path) #[:,1] might be necessery
     words = vocab_11["Sheet1"][2:end,1]
     vocab_1 = collect(String.(words)) # might be a problem with the Int motherfucker
-    println(vocab_1)
 
     text_path = joinpath(MATRIX_PATH, section * "_text$(suffix).json")
     text = read_json(text_path)
@@ -55,7 +54,8 @@ function vb_estimate(section::String; onlyTF::Bool=true, K::Int=40, alpha::Float
 
 end
 
-function find_NMF_given_solution(B_init::Matrix{Float64}, Theta_init::Matrix{Float64}, 
+function find_NMF_given_solution(B_init::Matrix{Float64},
+    Theta_init::Matrix{Float64}, 
     beta::Float64, T::Int, eps::Float64; 
     maxit::Int=100000, verbose::Bool=false, random_seed::Int=0)
     function A(i::Int, j::Int, λ::Float64, K::Int)
@@ -64,43 +64,65 @@ function find_NMF_given_solution(B_init::Matrix{Float64}, Theta_init::Matrix{Flo
         a[j,i] = λ
         return a
     end
-
+    #Theta_init is fine
     K = size(B_init, 2)
 
     B_store = [B_init]
     Theta_store = [Theta_init]
-
+    # Theta sotre is fine
     for s in 1:maxit
+        #println(Theta_store[s])
         B = B_store[s]
         Theta = Theta_store[s]
 
+        # Theta is Nan
         for i in 1:K
             idx = setdiff(1:K, [1])
             j = rand(idx)
 
-            denom = Theta[i, :] .+ Theta[j, :]
-            valid = denom .> 0
-           
-            λ_max_arr = (Theta[j, :] ./ denom)
-            λ_max_arr[.!valid] .= Inf
-            λ_max_arr = (Theta[j, :] ./ denom)
+            λ_max_vals = Float64[]
+            for k in 1:size(Theta, 2)
+                denom = Theta[i, k] + Theta[j, k]
+                if denom > 0
+                    push!(λ_max_vals, Theta[j, k] / denom)
+                end
+            end
 
-            λ_max = minimum(λ_max_arr)
+            if isempty(λ_max_vals)
+                #@warn "λ_min could not be computed at iteration $s (i=$i, j=$j); skipping"
+                continue
+            else
+                λ_max = minimum(λ_max_vals)
+            end
+            
+            λ_min_vals = Float64[]
+            for k in 1:size(B, 1)
+                if B[k, j] > B[k, i]
+                    denom2 = B[k, i] - B[k, j]
+                    if denom2 != 0.0
+                        push!(λ_min_vals, B[k, i] / denom2)
+                    end
+                end
+            end
 
-            denom2 = B[:, i] .- B[:, j]
-            valid2 = B[:, j] .> B[:, i]
-            λ_min_arr = (B[:, i] ./ denom2)
-            λ_min_arr[.!valid2] .= -Inf
-            λ_min = maximum(λ_min_arr)
+            if isempty(λ_min_vals)
+                #@warn "λ_min could not be computed at iteration $s (i=$i, j=$j); skipping"
+                continue
+            else
+                λ_min = maximum(λ_min_vals)
+            end
 
             x = rand(Beta(beta))
+            #max is NaN min is -Inf
+            #println("x = ",x,"max = ", λ_max,"min = ", λ_min)
             λ = x * λ_max + (1 - x) * λ_min
             
             A_mat = A(i, j, λ, K)
             B = B * A_mat
+            #Lambda is NaN
             Theta = A(i, j, -λ / (1 - λ), K) * Theta
         end
-
+        #Theta is NaN
         push!(B_store, B)
         push!(Theta_store, Theta)
 
@@ -108,6 +130,7 @@ function find_NMF_given_solution(B_init::Matrix{Float64}, Theta_init::Matrix{Flo
             B_stack = cat(B_store..., dims=3)
             B_max_S = maximum(B_stack, dims=3)[:, :]
             B_min_S = minimum(B_stack, dims=3)[:, :]
+            
             avg_B_chg_S = mean(B_max_S .- B_min_S)
 
             B_stack_T = cat(B_store[1:end-T]..., dims=3)
@@ -118,8 +141,9 @@ function find_NMF_given_solution(B_init::Matrix{Float64}, Theta_init::Matrix{Flo
             if verbose
                 println("Iteration $s: avg_B_chg_S - avg_B_chg_T = $(avg_B_chg_S - avg_B_chg_T)")
             end
-
+            
             if avg_B_chg_S - avg_B_chg_T < eps
+                println(avg_B_chg_S - avg_B_chg_T)
                 break
             end 
         end
@@ -132,7 +156,7 @@ function safe_mkdir(path::String)
 end
 
 # Translate algo1_only_store_draws
-function algo1_only_store_draws(gamma1::Matrix{Float64}, lam1::Matrix{Float64},
+function algo1_only_store_draws(gamma1::Matrix{Float64},lam1::Matrix{Float64},
                                  gamma2::Matrix{Float64}, lam2::Matrix{Float64},
                                  eps::Float64, T::Int, save_folder::String;
                                  post_draw_num::Int=200, beta::Float64=0.5, random_seed::Int=0)
@@ -149,11 +173,11 @@ function algo1_only_store_draws(gamma1::Matrix{Float64}, lam1::Matrix{Float64},
         start = time()
 
         # Sample B and Theta from Dirichlet
-        B1 = sample_dirichlet(lam1)'
-        B2 = sample_dirichlet(lam2)'
+        B1 = copy(transpose(sample_dirichlet(lam1)))
+        B2 = copy(transpose(sample_dirichlet(lam2)))
         
-        Theta1 = sample_dirichlet(gamma1)'
-        Theta2 = sample_dirichlet(gamma2)'
+        Theta1 = copy(transpose(sample_dirichlet(gamma1)))
+        Theta2 = copy(transpose(sample_dirichlet(gamma2)))
 
         B_list_1, Theta_list_1 = find_NMF_given_solution(B1, Theta1, beta, T, eps, random_seed=random_seed)
         B_list_2, Theta_list_2 = find_NMF_given_solution(B2, Theta2, beta, T, eps, random_seed=random_seed)
@@ -184,8 +208,8 @@ function store_posterior_draws(gamma::Matrix{Float64}, lam::Matrix{Float64},
 
     for i in 1:post_draw_num
         println("Drawing posterior number $i")
-        B = sample_dirichlet(lam)'
-        Theta = _ample_dirichlet(gamma)'
+        B = copy(transpose(sample_dirichlet(lam)))
+        Theta = copy(transpose(_ample_dirichlet(gamma)))
         push!(B_Theta_post_draw_store, (B, Theta))
     end
     post_draw_array = Any[B_Theta_post_draw_store[i] for i in 1:post_draw_num]
