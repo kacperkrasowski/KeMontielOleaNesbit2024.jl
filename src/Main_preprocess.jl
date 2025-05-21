@@ -29,5 +29,5 @@ stop_words = ["think", "chairman", "presid", "governor",
 
 generate_raw_data() # commented out to run the script using raw_text.xlsx directly
 preprocess()
-text1, text2 = generate_tf_only_matrix(option="text", tf_idf_threshold=[200, 150], additional_stop_words=stop_words)
+text1, text2 = generate_tf_only_matrix([200, 150],stop_words,"text")
                 
