@@ -54,7 +54,6 @@ function vb_estimate(section::String; onlyTF::Bool=true, K::Int=40, alpha::Float
     return herfindahl, posterior_mean, gamma, olda.lambda, olda, text1
 
 end
-vb_estimate("FOMC1")
 
 function find_NMF_given_solution(B_init::Matrix{Float64}, Theta_init::Matrix{Float64}, 
     beta::Float64, T::Int, eps::Float64; 
