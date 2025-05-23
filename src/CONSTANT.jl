@@ -1,5 +1,5 @@
 if Sys.iswindows()
-    cd("C:\\Users\\Kacper\\.julia\\dev\\KeMontielOleaNesbit2024.jl")
+    cd(abspath(joinpath(@__DIR__, "..")))
 else
     cd(abspath(joinpath(@__DIR__, "..")))
 end
