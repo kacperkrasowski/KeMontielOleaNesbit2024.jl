@@ -22,7 +22,7 @@ This function assumes transcripts have already been downloaded and stored. It pr
 
 function generate_raw_data()
     error_count = 0
-    raw_doc = readdir(PDF_PATH)
+    raw_doc = readdir(PDF_PATH_TEST)
     filelist = sort(raw_doc)
 
     raw_text = DataFrame(Date = Int[], Speaker = String[], content = String[])
@@ -32,7 +32,7 @@ function generate_raw_data()
         date = parse(Int, file[5:10])
         n = length(filelist)
         println("Document $i of $n: $file")
-        doc = pdDocOpen(joinpath(PDF_PATH, file))
+        doc = pdDocOpen(joinpath(PDF_PATH_TEST, file))
         npage = pdDocGetPageCount(doc)
         parsed = ""
 

@@ -1,4 +1,4 @@
-include(joinpath(@__DIR__, "..", "CONSTANT.JL"))
+include(joinpath(@__DIR__, "..", "CONSTANT.jl"))
 
 using Plots
 using LaTeXStrings

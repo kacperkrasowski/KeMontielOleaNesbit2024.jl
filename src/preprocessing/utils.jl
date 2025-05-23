@@ -1,5 +1,5 @@
 import StopWords: stopwords
-include(abspath(joinpath(@__DIR__, "..", "CONSTANT.JL")))
+include(abspath(joinpath(@__DIR__, "..", "CONSTANT.jl")))
 using StopWords
 using DataStructures
 using WordCloud
