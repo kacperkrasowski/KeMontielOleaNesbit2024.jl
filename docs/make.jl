@@ -20,4 +20,5 @@ makedocs(;
 deploydocs(;
     repo="github.com/kacperkrasowski/KeMontielOleaNesbit2024.jl",
     devbranch="main",
+    devurl = "dev",
 )
