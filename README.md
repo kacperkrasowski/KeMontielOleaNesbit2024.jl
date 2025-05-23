@@ -23,7 +23,7 @@ Include as much detail in the article citation as you can.
 ## Authors 
 
 - Kacper Krasowski
-- Stefano Fusinatio
+- Stefano Fusinato
 
 <!---
 The replication package can have a different set of authors than the article.
