@@ -50,7 +50,7 @@ function credible_set90_range(N::Int, I_sim::Int)
     xlabel!(L"$n_{11}/N$")
     ylabel!(L"$E[ \lambda(B,\Theta) \: | \: C]$")
     Plots.title!("Credible Set 90% Range, N = $N")
-    plot!(legend =:top)
+    plot!(legend =:top, foreground_color_legend = nothing, background_color_legend = nothing)
 
     savefig(joinpath(PLOT_PATH,"CredibleSet90_Range_N$(N).png"))
 end

@@ -1,57 +1,56 @@
-using Plots
 using KernelDensity
+using Plots
 using Statistics
-include(joinpath(@__DIR__, "compute_functional_from_nmf_draws.jl"))
 
-function plot_result(H_diff_percent::Vector{Float64},
-                     lambda_lower_percent::Vector{Float64},
-                     lambda_upper_percent::Vector{Float64},
-                     density_type::String,
-                     x_lims::Tuple{Float64, Float64},
-                     y_lims::Tuple{Float64, Float64},
-                     x_label::String,
-                     save_fig_name::String)
+function plot_result(H_diff_percent, lambda_lower_percent, lambda_upper_percent,
+                     density_type::String, x_lims::Tuple, y_lims::Tuple,
+                     x_label::String, save_fig_name::String)
 
-    # KDEs
-    kde_H = kde(H_diff_percent)
-    kde_lower = kde(lambda_lower_percent)
-    kde_upper = kde(lambda_upper_percent)
+    # Estimate kernel density
+    kde_H_diff     = kde(H_diff_percent)
+    kde_lambda_low = kde(lambda_lower_percent)
+    kde_lambda_up  = kde(lambda_upper_percent)
 
-    # Start plotting
-    plt = plot(kde_H.x, kde_H.density, label="", linewidth=2, color=:blue)
-    plot!(plt, kde_lower.x, kde_lower.density, label="", linewidth=2, color=:red)
-    plot!(plt, kde_upper.x, kde_upper.density, label="", linewidth=2, color=:red)
+    # Compute quantiles for robust credible set markers
+    q025 = quantile(lambda_lower_percent, 0.025)
+    q975 = quantile(lambda_upper_percent, 0.975)
 
-    # Vertical lines at means
-    vline!(plt, [mean(H_diff_percent)], linestyle=:dash, color=:blue)
-    vline!(plt, [mean(lambda_lower_percent)], linestyle=:dot, color=:red, linewidth=1)
-    vline!(plt, [mean(lambda_upper_percent)], linestyle=:dot, color=:red, linewidth=1)
-
-    # Credible set markers (2.5% and 97.5% quantiles)
-    scatter!(plt, [quantile(lambda_lower_percent, 0.025)], [0],
-             marker=:pentagon, markersize=8, color=:red, label="")
-    scatter!(plt, [quantile(lambda_upper_percent, 0.975)], [0],
-             marker=:pentagon, markersize=8, color=:red, label="")
-
-    # Set labels and limits
-    xlabel!(plt, x_label)
-    ylabel!(plt, "$density_type Density")
-    #xlims!(plt, x_lims)
-    #ylims!(plt, y_lims)
-
-    # Legend
+    # Create legend labels based on density_type
     if density_type == "Posterior"
-        label1 = "Posterior density λ(B,Θ)"
-        label2 = "Posterior density of λ̲*, λ̅*"
+        label1 = "Posterior density"
+        label2 = "Posterior density of lower and upper bounds"
         label3 = "95% robust credible set"
     else
-        label1 = "Prior density λ(B,Θ)"
-        label2 = "Alternative prior density for λ(B,Θ)"
+        label1 = "Prior density"
+        label2 = "Alternative prior density"
         label3 = "95% credible set"
     end
 
-    plot!(plt, legend=:topleft, label=[label1 label2 label3])
+    # Build the plot
+    p = plot(kde_H_diff.x, kde_H_diff.density,
+             color=:blue, linewidth=1, label=label1)
+    vline!(p, [mean(H_diff_percent)], linestyle=:dash, color=:blue, label="")
 
-    # Save figure as PNG
-    savefig(plt, joinpath(PLOT_PATH, "$(save_fig_name).png"))
+    plot!(p, kde_lambda_low.x, kde_lambda_low.density,
+          color=:red, linewidth=1, label=label2)
+    vline!(p, [mean(lambda_lower_percent)], linestyle=:dot, linewidth=0.5, color=:red, label="")
+
+    plot!(p, kde_lambda_up.x, kde_lambda_up.density,
+          color=:red, linewidth=1, label="")
+    vline!(p, [mean(lambda_upper_percent)], linestyle=:dot, linewidth=0.5, color=:red, label="")
+
+    scatter!([q025, q975], [0, 0],
+             marker=:pentagon, color=:red, markersize=6, markerstrokewidth=0,
+             label=label3)
+
+    # Set plot limits and labels
+    #xlims!(p, x_lims)
+    #ylims!(p, y_lims)
+    xlabel!(p, x_label)
+    ylabel!(p, "$(density_type) Density")
+
+    # Configure legend without a box (turn off the legend border)
+    plot!(p, legend=:topleft, legendfontsize=10, legend_border=false, foreground_color_legend = nothing, background_color_legend = nothing)
+
+    savefig(p, joinpath(PLOT_PATH, "$(save_fig_name).png"))
 end

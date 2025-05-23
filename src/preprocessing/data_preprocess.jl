@@ -6,12 +6,6 @@ using DataFrames
 using PDFIO
 using XLSX
 
-function extract_text_pdftotext(pdf_path::String)::String
-    exe = joinpath(Poppler_jll.artifact_dir, "bin", "pdftotext.exe")
-    txt_path = replace(pdf_path, ".pdf" => ".txt")
-    run(`$exe -layout $pdf_path $txt_path`)
-    return read(txt_path, String)
-end
 """
     generate_raw_data()
 
@@ -22,7 +16,7 @@ This function assumes transcripts have already been downloaded and stored. It pr
 
 function generate_raw_data()
     error_count = 0
-    raw_doc = readdir(PDF_PATH_TEST)
+    raw_doc = readdir(PDF_PATH)
     filelist = sort(raw_doc)
 
     raw_text = DataFrame(Date = Int[], Speaker = String[], content = String[])
@@ -32,7 +26,7 @@ function generate_raw_data()
         date = parse(Int, file[5:10])
         n = length(filelist)
         println("Document $i of $n: $file")
-        doc = pdDocOpen(joinpath(PDF_PATH_TEST, file))
+        doc = pdDocOpen(joinpath(PDF_PATH, file))
         npage = pdDocGetPageCount(doc)
         parsed = ""
 
@@ -43,7 +37,6 @@ function generate_raw_data()
                 pdPageExtractText(io,page)
                 parsed *= String(take!(io))
             catch e
-                println("huj")
                 error_count+=1
                 push!(notloaded, file)
             end
@@ -132,14 +125,14 @@ function tokenize(content)
         token_clean!(docsobj,1)
         additional_stopword = ["january", "february", "march", "april", "may", "june", "july", "august", "september","october", "november", "december", "unintelligible"]
         for word in additional_stopword
-            push!(docsobj.stopwords, word)
+            push!(docsobj.sw_set, word)
         end
         firstname = DataFrame(XLSX.readtable(joinpath(UTILFILE_PATH, "firstnames.xlsx"),"Sheet1"))
         for name in eachrow(firstname)
             
             if typeof(name["First name"]) == "missing"
                 println(typeof(name["First name"]))
-                push!(docsobj.stopwords, name["First name"])
+                push!(docsobj.sw_set, name["First name"])
             end
         end
         stopword_remove!(docsobj,"tokens")
@@ -226,4 +219,3 @@ function preprocess()
     
 end
 
-#CONCATENATE THE BI/TRIGRAMS WITH "_" APRT FROM THAT IT WORKS WELL

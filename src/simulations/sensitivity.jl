@@ -22,7 +22,7 @@ function plot_sensitivity(N)
 
     xlabel!(L"n_{11}/N")
     ylabel!(L"E[ \lambda(B,\Theta) \: | \: C]")
-    plot!(legend = :top, legendfontsize = 12, legendtitle = nothing)
+    plot!(legend = :top, legendfontsize = 12, legendtitle = nothing, foreground_color_legend = nothing, background_color_legend = nothing)
 
     savefig(p, joinpath(PLOT_PATH,"Sensitivity_N$(N).png"))
     return p

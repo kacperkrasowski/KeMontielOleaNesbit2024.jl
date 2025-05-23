@@ -41,7 +41,7 @@ function simulation_plots()
     MC_illustration(N, Btrue, Thetatrue, MC_draws, Posterior_draws)
 
     N10 = load(joinpath(CACHE_PATH,"MC_N10.jld2"))
-    N1000 = load(joinpath(CACHE_PATH,"MC_N10.jld2"))
+    N1000 = load(joinpath(CACHE_PATH,"MC_N1000.jld2"))
 
     PlotsMC(N10, N1000)
 end

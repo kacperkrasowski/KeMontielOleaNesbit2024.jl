@@ -53,7 +53,7 @@ function range_posterior_means(N::Int, I_sim::Int)
     xlabel!(L"n_{11}/N")
     ylabel!(L"E[ \lambda(B,\Theta) \: | \: C]")
 
-    plot!(legend=:top, legendfontsize=10, legendtitle="", grid=false)
+    plot!(legend=:top, legendfontsize=10, legendtitle="", grid=false, foreground_color_legend = nothing, background_color_legend = nothing)
 
     # Save
     savefig(joinpath(PLOT_PATH,"Range_N$(N).png"))
