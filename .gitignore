@@ -3,3 +3,21 @@
 *.jl.mem
 /docs/Manifest*.toml
 /docs/build/
+# Ignore output, logs, cache
+/cache/
+/output/
+/logs/
+
+# Ignore data and results (if not part of the repo)
+data/*.csv
+data/*.mat
+data/*.xlsx
+*.jld2
+
+# Ignore temp files
+*.tmp
+*.log
+
+# Ignore Documenter-generated files
+docs/build/
+docs/dev/
