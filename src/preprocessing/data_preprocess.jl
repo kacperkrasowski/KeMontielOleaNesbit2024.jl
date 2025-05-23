@@ -1,23 +1,38 @@
 config_path = abspath(joinpath(@__DIR__, "..", "CONSTANT.jl"))
 include(config_path)
-include( joinpath(@__DIR__,"preprocess_pdf","raw_docs.jl")) 
-include("utils.jl")
+include(joinpath(@__DIR__,"raw_docs.jl")) 
+include(joinpath(@__DIR__,"utils.jl"))
 using DataFrames
 using PDFIO
 using XLSX
 
+function extract_text_pdftotext(pdf_path::String)::String
+    exe = joinpath(Poppler_jll.artifact_dir, "bin", "pdftotext.exe")
+    txt_path = replace(pdf_path, ".pdf" => ".txt")
+    run(`$exe -layout $pdf_path $txt_path`)
+    return read(txt_path, String)
+end
+"""
+    generate_raw_data()
+
+Extracts raw text from pre-downloaded PDF transcripts and saves a `raw_text.xlsx` file in the cache folder.
+
+This function assumes transcripts have already been downloaded and stored. It processes them into a basic structured format for further preprocessing.
+"""
+
 function generate_raw_data()
     error_count = 0
-    raw_doc = readdir(PDF_PATH_TEST)
+    raw_doc = readdir(PDF_PATH)
     filelist = sort(raw_doc)
 
     raw_text = DataFrame(Date = Int[], Speaker = String[], content = String[])
     start = time()
+    notloaded = Set()
     for (i, file) in enumerate(filelist)
         date = parse(Int, file[5:10])
         n = length(filelist)
         println("Document $i of $n: $file")
-        doc = pdDocOpen(joinpath(cwd,"src", "FOMC_pdf_test", file))
+        doc = pdDocOpen(joinpath(PDF_PATH, file))
         npage = pdDocGetPageCount(doc)
         parsed = ""
 
@@ -28,7 +43,9 @@ function generate_raw_data()
                 pdPageExtractText(io,page)
                 parsed *= String(take!(io))
             catch e
+                println("huj")
                 error_count+=1
+                push!(notloaded, file)
             end
    
         end
@@ -58,6 +75,7 @@ function generate_raw_data()
     println("Documents processed. Time: $elapsed seconds")
     println("Cache Location: $xlsx_path")
     println("error count = ",error_count)
+    println(notloaded)
 end
 
 function separation(raw_text)
@@ -159,7 +177,16 @@ function find_collocation(raw_text_separated::DataFrame)
     return raw_text_separated
 
 end
+"""
+    preprocess()
 
+Runs the main preprocessing pipeline for FOMC data:
+- Loads raw data
+- Applies speaker-based separation
+- Tokenizes and stems the content
+- Finds collocations
+- Outputs cleaned data to Excel
+"""
 function preprocess()
     println("Loading raw_text.xlsx...")
     text = DataFrame(XLSX.readtable(joinpath(CACHE_PATH, "raw_text.xlsx"), "Sheet1"))
@@ -199,5 +226,4 @@ function preprocess()
     
 end
 
-generate_raw_data()
-preprocess() #CONCATENATE THE BI/TRIGRAMS WITH "_" APRT FROM THAT IT WORKS WELL
+#CONCATENATE THE BI/TRIGRAMS WITH "_" APRT FROM THAT IT WORKS WELL

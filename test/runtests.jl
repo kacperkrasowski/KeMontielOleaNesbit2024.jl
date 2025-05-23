@@ -1,6 +1,5 @@
-using KeMontielOleaNesbit2024
 using Test
 
-@testset "KeMontielOleaNesbit2024.jl" begin
-    # Write your tests here.
-end
+include("test_preprocessing.jl")
+include("test_nmf.jl")
+include("test_simulations.jl")

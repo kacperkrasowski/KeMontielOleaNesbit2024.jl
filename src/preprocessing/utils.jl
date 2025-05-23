@@ -1,5 +1,8 @@
+import StopWords: stopwords
+include(abspath(joinpath(@__DIR__, "..", "CONSTANT.JL")))
 using StopWords
 using DataStructures
+using WordCloud
 
 ngram(s,n) = [view(s,i:i+n-1) for i=1:length(s)-n+1]
 
@@ -52,6 +55,18 @@ function replace_collocation(s::String, dict_collocation::Dict{String, String})
     end
     return s
 end
+"""
+    plot_word_cloud(text::Vector{Vector{String}}, filename::String)
 
-df_l = [["The", "Federal", "Reserve", "made", "a", "policy", "decision"], ["Reserve", "Bank", "governor", "speaks", "about", "inflation"], ["Unintelligible", "remarks", "from", "January", "meeting"]]
-#### ADD THE PLOT_WORD_CLOUD AT SOME POINT ###
+Generates and saves a word cloud plot using all tokens from the provided text.
+
+# Arguments
+- `text`: nested vector of tokenized words (one subvector per document)
+- `filename`: file name to save the output PNG plot under `PLOT_PATH`
+"""
+function plot_word_cloud(text, filename)
+    meeting_string = join(Iterators.flatten(text), " ")
+    wc = wordcloud(meeting_string) |> generate!
+    paint(wc, joinpath(PLOT_PATH,filename))
+end
+

@@ -25,7 +25,19 @@ function doc2bow(doc, word2id::Dict{String, Int})
     end
     return collect(sort(collect(counts), by = x -> x[1]))
 end
+"""
+    generate_tf_only_matrix(tf_idf_threshold::Vector{Int}, additional_stop_words::Vector{String}, option)
 
+Generates term-frequency-only matrices for each FOMC section and saves them as Excel and JSON files.
+
+# Arguments
+- `tf_idf_threshold`: max number of words to retain per section
+- `additional_stop_words`: extra stopwords to exclude
+- `option`: return \"matrix\", \"text\", or nothing
+
+# Returns
+- Depending on `option`, returns term-document matrices or tokenized meeting texts
+"""
 function generate_tf_only_matrix(tf_idf_threshold::Vector{Int} = [9000,6000], additional_stop_words::Vector{String} = [], option = nothing)
     data = DataFrame(XLSX.readtable(joinpath(CACHE_PATH, "FOMC_token_separated_col.xlsx"), "Sheet1"))
     filter!(row -> typeof(row[:content])!=Missing, data )
@@ -117,8 +129,6 @@ function generate_tf_only_matrix(tf_idf_threshold::Vector{Int} = [9000,6000], ad
             
             push!(text2, t)
         end
-        println(length(text2))
-        println(length.(text2) |> sum)     
         new_corpus = [doc2bow(text, dictionary) for text in meeting_text] 
         
 

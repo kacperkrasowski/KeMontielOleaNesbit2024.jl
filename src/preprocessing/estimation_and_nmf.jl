@@ -3,10 +3,11 @@ using Distributions
 using XLSX
 using JSON
 using LinearAlgebra
-using MAT
+using JLD2
+using DataFrames
 
 config_path = abspath(joinpath(@__DIR__, "..", "CONSTANT.jl"))
-config_path2 = abspath(joinpath(@__DIR__, "..", "onlineldavb.jl"))
+config_path2 = abspath(joinpath(@__DIR__, "onlineldavb.jl"))
 include(config_path)
 include(config_path2)
 function read_json(file)
@@ -22,7 +23,28 @@ function  sample_dirichlet(alpha::Matrix{Float64})
     end
     res
 end
+"""
+    vb_estimate(section::String; onlyTF, K, alpha, eta, tau, kappa, docs_idx_list, random_seed)
 
+Performs OnlineLDA variational Bayes estimation on preprocessed text.
+
+# Arguments
+- `section`: "FOMC1" or "FOMC2"
+- `onlyTF`: whether to use TF-only dictionary
+- `K`: number of topics
+- `alpha`, `eta`: Dirichlet prior parameters
+- `tau`, `kappa`: learning rate params
+- `docs_idx_list`: optional subset of documents
+- `random_seed`: reproducibility
+
+# Returns
+- `herfindahl`: vector of Herfindahl indices per document
+- `posterior_mean`: normalized gamma matrix
+- `gamma`: document-topic matrix
+- `lambda`: topic-word matrix
+- `model`: fitted OnlineLDA instance
+- `text1`: input corpus as a vector of strings
+"""
 function vb_estimate(section::String; onlyTF::Bool=true, K::Int=40, alpha::Float64=0.025,
     eta::Float64=0.025, tau::Float64=1024.0, kappa::Float64=0.7,
     docs_idx_list::Union{Nothing, Vector{Int}}=nothing, random_seed::Int=0)
@@ -53,7 +75,14 @@ function vb_estimate(section::String; onlyTF::Bool=true, K::Int=40, alpha::Float
     return herfindahl, posterior_mean, gamma, olda.lambda, olda, text1
 
 end
+"""
+    find_NMF_given_solution(B_init, Theta_init, beta, T, eps; maxit, verbose, random_seed)
 
+Solves a posterior NMF decomposition by iteratively applying Algorithm 1.
+
+# Returns
+- A tuple of lists: `(B_list, Theta_list)` with matrices from each iteration.
+"""
 function find_NMF_given_solution(B_init::Matrix{Float64},
     Theta_init::Matrix{Float64}, 
     beta::Float64, T::Int, eps::Float64; 
@@ -156,14 +185,24 @@ function safe_mkdir(path::String)
 end
 
 # Translate algo1_only_store_draws
-function algo1_only_store_draws(gamma1::Matrix{Float64},lam1::Matrix{Float64},
-                                 gamma2::Matrix{Float64}, lam2::Matrix{Float64},
-                                 eps::Float64, T::Int, save_folder::String;
-                                 post_draw_num::Int=200, beta::Float64=0.5, random_seed::Int=0)
+
+"""
+    algo1_only_store_draws(gamma1, lam1, gamma2, lam2, eps, T, save_folder; post_draw_num, beta, random_seed)
+
+Draws posterior samples for B and Θ from two gamma/lambda priors, solves NMF, and stores the outputs as `.jld2` files.
+"""
+function algo1_only_store_draws(gamma1::Matrix{Float64}, lam1::Matrix{Float64},
+                                    gamma2::Matrix{Float64}, lam2::Matrix{Float64},
+                                    eps::Float64, T::Int, save_folder::String;
+                                    post_draw_num::Int=200, beta::Float64=0.5, random_seed::Int=0)
+
     B_Theta_sec1_post_draw_store = Vector{Tuple{Matrix{Float64}, Matrix{Float64}}}()
     B_Theta_sec2_post_draw_store = Vector{Tuple{Matrix{Float64}, Matrix{Float64}}}()
 
-    folders = ["", "FOMC1", "FOMC2", joinpath("FOMC1","NMF_B"), joinpath("FOMC1", "NMF_Theta"), joinpath("FOMC2","NMF_B"), joinpath("FOMC2","NMF_Theta")]
+    folders = ["", "FOMC1", "FOMC2", joinpath("FOMC1","NMF_B"), joinpath("FOMC1", "NMF_Theta"),
+               joinpath("FOMC2","NMF_B"), joinpath("FOMC2","NMF_Theta"),
+               "posterior_draws_sec1", "posterior_draws_sec2"]
+    
     for sub in folders
         safe_mkdir(joinpath(save_folder, sub))
     end
@@ -172,10 +211,9 @@ function algo1_only_store_draws(gamma1::Matrix{Float64},lam1::Matrix{Float64},
         println("Drawing posterior number $i")
         start = time()
 
-        # Sample B and Theta from Dirichlet
+        # Sample B and Theta
         B1 = copy(transpose(sample_dirichlet(lam1)))
         B2 = copy(transpose(sample_dirichlet(lam2)))
-        
         Theta1 = copy(transpose(sample_dirichlet(gamma1)))
         Theta2 = copy(transpose(sample_dirichlet(gamma2)))
 
@@ -185,19 +223,24 @@ function algo1_only_store_draws(gamma1::Matrix{Float64},lam1::Matrix{Float64},
         push!(B_Theta_sec1_post_draw_store, (B1, Theta1))
         push!(B_Theta_sec2_post_draw_store, (B2, Theta2))
 
-        # Save .mat files
-        matwrite(joinpath(save_folder, "FOMC1", "NMF_B", "NMF_sec1_B_draw$(i).mat"), Dict("B_list" => B_list_1))
-        matwrite(joinpath(save_folder, "FOMC2", "NMF_B", "NMF_sec2_B_draw$(i).mat"), Dict("B_list" => B_list_2))
-        matwrite(joinpath(save_folder, "FOMC1", "NMF_Theta", "NMF_sec1_Theta_draw$(i).mat"), Dict("Theta_list" => Theta_list_1))
-        matwrite(joinpath(save_folder, "FOMC2", "NMF_Theta", "NMF_sec2_Theta_draw$(i).mat"), Dict("Theta_list" => Theta_list_2))
+        # Save each matrix in CSV format
+        @save joinpath(save_folder, "FOMC1", "NMF_B", "NMF_sec1_B_draw$(i).jld2") B_list = B_list_1
+        @save joinpath(save_folder, "FOMC2", "NMF_B", "NMF_sec2_B_draw$(i).jld2") B_list = B_list_2
+        @save joinpath(save_folder, "FOMC1", "NMF_Theta", "NMF_sec1_Theta_draw$(i).jld2") Theta_list = Theta_list_1
+        @save joinpath(save_folder, "FOMC2", "NMF_Theta", "NMF_sec2_Theta_draw$(i).jld2") Theta_list = Theta_list_2
+
+
 
         elapsed = time() - start
         println("Finished posterior draw $i. Time: $(elapsed)s")
     end
-
-    matwrite(joinpath(save_folder, "B_Theta_post_draws_sec1.mat"), Dict("post_draws_B_Theta" => B_Theta_sec1_post_draw_store))
-    matwrite(joinpath(save_folder, "B_Theta_post_draws_sec2.mat"), Dict("post_draws_B_Theta" => B_Theta_sec2_post_draw_store))
+            # Also save sampled B and Theta matrices
+    @save joinpath(save_folder, "B_Theta_post_draws_sec1.jld2") post_draws_B_Theta = B_Theta_sec1_post_draw_store
+    
+    @save joinpath(save_folder, "B_Theta_post_draws_sec2.jld2") post_draws_B_Theta = B_Theta_sec2_post_draw_store
+    
 end
+
 
 function store_posterior_draws(gamma::Matrix{Float64}, lam::Matrix{Float64},
     post_draw_num::Int, save_folder::String, cache_name::String)
