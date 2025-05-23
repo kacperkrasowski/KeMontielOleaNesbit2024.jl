@@ -5,7 +5,7 @@ include(joinpath(@__DIR__, "simulations", "range.jl"))
 include(joinpath(@__DIR__, "simulations", "algo2range.jl"))
 include(joinpath(@__DIR__, "simulations", "credibleset90_range.jl"))
 include(joinpath(@__DIR__, "simulations", "MC_illustration.jl"))
-include(joinpath(@__DIR__, "simulations", "PlotsMC.jl"))
+include(joinpath(@__DIR__, "simulations", "plotsMC.jl"))
 """
     simulation_plots()
 

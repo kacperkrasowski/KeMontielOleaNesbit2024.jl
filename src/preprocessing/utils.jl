@@ -4,7 +4,9 @@ using StopWords
 using DataStructures
 using WordCloud
 
-ngram(s,n) = [view(s,i:i+n-1) for i=1:length(s)-n+1]
+function ngramm(s,n) 
+    [view(s,i:i+n-1) for i=1:length(s)-n+1]
+end
 
 function bigrams(big_document; freq::Int = 150) # for the whole document
     ignored_words = stopwords["eng"]
@@ -14,7 +16,7 @@ function bigrams(big_document; freq::Int = 150) # for the whole document
     all_bigrams = String[]
     for doc in big_document
         filtered = [w for w in doc if length(w) ≥ 3 && lowercase(w) ∉ ignored_words]
-        doc_bigrams = ngram(filtered,2)
+        doc_bigrams = ngramm(filtered,2)
         
         append!(all_bigrams, [join(b, " ") for b in doc_bigrams])
     end
@@ -37,7 +39,7 @@ function trigrams(big_document; freq::Int = 100) # for the whole document
     all_bigrams = String[]
     for doc in big_document
         filtered = [w for w in doc if length(w) ≥ 3 && lowercase(w) ∉ ignored_words]
-        doc_bigrams = ngram(filtered,3)
+        doc_bigrams = ngramm(filtered,3)
 
         append!(all_bigrams, [join(b, " ") for b in doc_bigrams])
     end
