@@ -171,7 +171,7 @@ julia > activate .
 using KeMontielOleaNesbit2024
 
 KeMontielOleaNesbit2024.run() # To replicate
-KeMontielOleaNesbit2024.run_test() #To run tests
+KeMontielOleaNesbit2024.run_tests() #To run tests
 ```
 
 ### Pipeline of replication:
