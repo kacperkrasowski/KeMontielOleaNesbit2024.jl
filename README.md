@@ -1,9 +1,8 @@
 #  Replication Package for: Robust Machine Learning Algorithms for Text Analysis
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://kacperkrasowski.github.io/KeMontielOleaNesbit2024.jl/stable/)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://kacperkrasowski.github.io/KeMontielOleaNesbit2024.jl/dev/)
-[![Build Status](https://github.com/kacperkrasowski/KeMontielOleaNesbit2024.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/kacperkrasowski/KeMontielOleaNesbit2024.jl/actions/workflows/CI.yml?query=branch%3Amaster)
-[![Coverage](https://codecov.io/gh/kacperkrasowski/KeMontielOleaNesbit2024.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/kacperkrasowski/KeMontielOleaNesbit2024.jl)
+[![Build Status](https://github.com/kacperkrasowski/KeMontielOleaNesbit2024.jl/actions/workflows/docs.yml/badge.svg?branch=main)](https://github.com/kacperkrasowski/KeMontielOleaNesbit2024.jl/actions/workflows/docs.yml)
+
 
 
 This repository is dedicated for a replication package of Ke, Shikun, José Luis Montiel Olea, and James Nesbit. "Robust Machine Learning Algorithms for Text Analysis." Quantitative Economics, 15, .no 4, (Econometric Society: 2024), 939-970. https://doi.org/10.3982/QE1825. The original code was written in Matlab and Python and was translated by us to Julia.

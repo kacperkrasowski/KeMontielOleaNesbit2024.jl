@@ -1,4 +1,8 @@
-cd("C:\\Users\\Kacper\\.julia\\dev\\KeMontielOleaNesbit2024.jl")
+if Sys.iswindows()
+    cd("C:\\Users\\Kacper\\.julia\\dev\\KeMontielOleaNesbit2024.jl")
+else
+    cd(abspath(joinpath(@__DIR__, "..")))
+end
 cwd = pwd()
 
 PDF_PATH = joinpath(cwd, "data", "raw", "FOMC_pdf")
