@@ -84,7 +84,7 @@ Memory and compute-time requirements may also be relevant or even critical. Some
 
 The runtime depends on the eps parameter set in `src/Main_generate_NMF_draws.jl`. Approximate time needed to reproduce the analyses on a standard 2025 desktop machine: 
 - 5 hours for eps = 2-e4
-- 10 hours for eps = 1-e4
+- >20 hours for eps = 1-e4
 
 
 #### Details
