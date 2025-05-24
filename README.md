@@ -15,7 +15,7 @@ Some of the results differ due:
 3. Different dictionaries used in order to stem the text (PorterStemmer in case of the paper).
 4. Some coding mistakes 
 
-The Project was uploaded without the NMF matricies since they weight abouve 30GB.
+The Project was uploaded without the NMF matricies since they weight above 150GB.
 <!---
 Include as much detail in the article citation as you can.
 -->
@@ -181,7 +181,7 @@ KeMontielOleaNesbit2024.run_tests() #To run tests
 2. `preprocess()` Wraps: separating FOMC1 and FOMC2 by calling `separation()`, tokenizing the content by calling `tokenize()`, and finding collocations by calling `find_collocation()`. All of those functions use methods defined for a mutable structure `RawDocs` defined in `src/preprocessing/raw_docs.jl`.
 3. `generate_tf_only_matrix()` Generates term document matricies, dictionary for meetings and merges all of the text for a given section together.
 4. `plot_word_cloud()` Generates the figure 8.
-5. `gen_NMF()` wraps: Variational Bayes Estimation by calling `vb_estimate()`, generates and stores all of the Negative Factorized Matricies by calling `algo1_only_store_draws()`, which uses `find_NMF_given_solution()` to factorize.  (around 30GB)
+5. `gen_NMF()` wraps: Variational Bayes Estimation by calling `vb_estimate()`, generates and stores all of the Negative Factorized Matricies by calling `algo1_only_store_draws()`, which uses `find_NMF_given_solution()` to factorize.  (around 150GB)
 6. `do_plots()` generates figures 9(a) and 9(b) by calling `compute_functional_from_nmf_draws()` that computes a statistic over the posterior NMF draws for a specific FOMC section and plots them by using `plot_result()`.
 7. Finally `simulation_plots()` wraps: generating figures: 3(a) and 3(b) by calling `plot_senitivity()`, generating figures: 4(a) and 4(b) by calling `range_posterior_means()`, generating figures: 5(a) and 5(b) by calling `credible_set90_range()`, generating figures: 6(a) and 6(b) by calling `algo2_range()`, generating figures: 7(a) and 7(b) by calling `PlotsMC()`.
 
