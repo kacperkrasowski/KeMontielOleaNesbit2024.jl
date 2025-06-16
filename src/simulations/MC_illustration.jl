@@ -18,7 +18,7 @@ function lambda_example(p1::Float64, p2::Float64)
 end
 
 function MC_illustration(N::Int, Btrue::Matrix{Float64}, Thetatrue::Matrix{Float64},
-                         MC_draws::Int, Posterior_draws::Int, save_path::String)
+                         MC_draws::Int, Posterior_draws::Int)
 
     # True parameters
     Ptrue = Btrue * Thetatrue

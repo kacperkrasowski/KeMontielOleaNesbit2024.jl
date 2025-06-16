@@ -46,3 +46,4 @@ function simulation_plots()
     PlotsMC(N10, N1000)
 end
 
+simulation_plots()
